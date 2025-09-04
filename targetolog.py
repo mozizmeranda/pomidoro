@@ -1,7 +1,7 @@
 from aiogram import types, Dispatcher, Bot
 import asyncio
 from aiogram.types import FSInputFile, BotCommand
-from config import bot_token, hour, minute
+from config import bot_token, hour, minute, analytic_id
 from aiogram.filters import Command
 import re
 from llm import gpt_v2
@@ -59,14 +59,14 @@ async def scheduled_analysis():
     filename = save_as_mobile_html(full_text, 123)
     doc = FSInputFile(filename, "adset_report_123_mobile.html")
     await bot.send_document(
-        chat_id=chat_id,
+        chat_id=analytic_id,
         document=doc,
         caption=f"📊 Отчет"
     )
     r = gpt_v2(full_text)
     paragraphs = r.split("---")
     for i in paragraphs:
-        await bot.send_message(chat_id=chat_id, text=format_for_telegram(i))
+        await bot.send_message(chat_id=analytic_id, text=format_for_telegram(i))
 
 
 requests.get(f"https://api.telegram.org/bot{bot_token}/sendMessage?"
@@ -153,6 +153,16 @@ async def send_campaigns(message: types.Message):
         if i[0] not in ids:
             ans += f"Name = {i[1]} -- ID = <code>{i[0]}</code>\n\n"
             ids.append(i[0])
+
+    await message.reply(ans, parse_mode="HTML")
+
+
+@dp.message(Command("adsets"))
+async def send_adsets(message: types.Message):
+    adsets = _active_adsets()
+    ans = ""
+    for adset in adsets:
+        ans += f"Name = <code>{adset['name']}</code> -- ID = <code>{adset['id']}</code>"
 
     await message.reply(ans, parse_mode="HTML")
 

@@ -481,7 +481,7 @@ def get_number_kval_leads(adset_id, target_date):
 
 
 target_date = datetime(2025, 8, 5)
-leads = get_number_kval_leads(120215614681850753, target_date)
+# leads = get_number_kval_leads(120215614681850753, target_date)
 # print("leads", leads)
 
 # print(get_metrics_from_meta(120222881867660753))

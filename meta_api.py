@@ -94,7 +94,7 @@ def _active_adsets():
     return active_adsets
 
 
-# print(active_adsets())
+# print(_active_adsets())
 
 
 def active_creatives():
@@ -201,7 +201,7 @@ def get_metrics_from_meta(adset_id):
         f"&fields=campaign_id,adset_id,campaign_name,adset_name,ad_id,ad_name,date_start,date_stop,"
         f"spend,impressions,clicks,ctr,cpm,actions"
         f"&access_token={access_token}&"
-        f"time_range[since]=2025-08-09&time_range[until]=2025-08-29&time_increment=1"
+        f"time_range[since]=2025-08-28&time_range[until]=2025-09-02&time_increment=1"
         f"&filtering={json.dumps(body)}"
         # f"&filtering=[{{\"field\":\"adset.id\",\"operator\":\"EQUAL\",\"value\":\"{adset_id}\"}}]"
     )
@@ -261,14 +261,14 @@ def get_metrics_from_meta(adset_id):
         db.insert_new_ad_metrics(params=params)
 
 
-# get_metrics_from_meta(120222675430710753)
+# get_metrics_from_meta(120223315253960753)
 
 
 def get_metrics_for_day():
     additions = []
     url = "https://graph.facebook.com/v23.0/act_1011840574303712/insights"
 
-    timestamp = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
+    timestamp = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
 
     params = {
         "level": "ad",
@@ -382,4 +382,4 @@ def get_metrics_from_db(adset_id):
 
     return full_text
 
-print(get_metrics_from_db(120215616952620753))
+# print(get_metrics_from_db(120215616952620753))

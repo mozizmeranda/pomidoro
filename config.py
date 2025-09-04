@@ -14,3 +14,5 @@ amocrm_access_token = env.str("amocrm_access_token")
 amocrm_subdomain = env.str("amocrm_subdomain")
 amocrm_client_secret = env.str("amocrm_client_secret")
 amocrm_id = env.str("amocrm_id")
+
+analytic_id = env.str("analytic_id")

@@ -50,7 +50,7 @@ def check_lead_id_with_pipeline_id(lead_id):
 
     resp = requests.get(url, headers=headers)
     data = resp.json()
-    print("data", data)
+    # print("data", data)
     if data['pipeline_id'] == 8388646:
         return 1
 
