@@ -109,17 +109,16 @@ async def gpt_request(message: types.Message):
 
 @dp.message(Command("analyze"))
 async def get_creatives(message: types.Message):
-    parts = message.text.strip().split(maxsplit=2)
-    if len(parts) < 2:
-        await message.reply("❗Формат: /analyze CAMPAIGN_ID \n\n[ваш текст]")
-        return
-
-    campaign_id = parts[1]
-    extracted_text = parts[2] if len(parts) > 2 else ""
-
-    metrics = get_metrics_from_db(campaign_id)
-    full_text = f"{extracted_text}\n\n{metrics}"
-    filename = save_as_mobile_html(metrics, 123)
+    active_adsets = _active_adsets()  # list()
+    get_metrics_for_day()  # getting fresh auto metrics and inserting them into db
+    request_text = ""
+    for adset in active_adsets:
+        # request_text += f"### Campaign name = {adset['name']}\n Campaign ID = {adset['id']}\n\n"
+        request_text += get_metrics_from_db(adset['id'])
+        request_text += "\n\n---\n\n\n"
+    # print(request_text)
+    full_text = prompt_for_auto_check + "\n\n" + request_text
+    filename = save_as_mobile_html(full_text, 123)
     doc = FSInputFile(filename, "adset_report_123_mobile.html")
     await bot.send_document(
         chat_id=message.from_user.id,
@@ -129,7 +128,7 @@ async def get_creatives(message: types.Message):
     r = gpt_v2(full_text)
     paragraphs = r.split("---")
     for i in paragraphs:
-        await message.answer(text=format_for_telegram(i))
+        await bot.send_message(chat_id=message.from_user.id, text=format_for_telegram(i))
 
 
 @dp.message(Command("text"))
