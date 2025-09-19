@@ -98,11 +98,9 @@ async def gpt_request(message: types.Message):
         extracted_text = t[5:]
         await message.reply(f"You asked: {extracted_text}")
         r = gpt_v2(extracted_text)
-        paragraphs = None
-        if "---" in r:
-            paragraphs = r.split("---")
-        else:
-            paragraphs = r
+        paragraphs = r.split("---")
+        if r == -1:
+            return
 
         for i in paragraphs:
             await message.answer(text=format_for_telegram(i))

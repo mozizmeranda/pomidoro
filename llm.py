@@ -236,7 +236,8 @@ def gpt_v2(text):
     except Exception as e:
         msg = f"Error:\n{e}\n----\nData:\n{data}"
         requests.get(f"https://api.telegram.org/bot{bot_token}/sendMessage?"
-                     f"chat_id=6287458105&text={e}")
+                     f"chat_id=6287458105&text={msg}")
+        return -1
 
 
 
