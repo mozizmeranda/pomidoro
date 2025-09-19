@@ -1,5 +1,5 @@
 import requests
-from config import open_ai_token
+from config import open_ai_token, bot_token
 import json
 from api_meta_ads import (llm_create_campaign, llm_create_adset, get_interests, update_adset_budget, set_adset_status,
                           get_adset_name_by_id)
@@ -153,85 +153,91 @@ def gpt_v2(text):
     response = requests.post(url, headers=headers, json=body)
     data = response.json()
     # print(data)
-    message = data["choices"][0]["message"]
+    try:
+        message = data["choices"][0]["message"]
 
-    if "tool_calls" in message:
-        for tool_call in message["tool_calls"]:
-            function_name = tool_call["function"]["name"]
-            args = json.loads(tool_call["function"]["arguments"])
+        if "tool_calls" in message:
+            for tool_call in message["tool_calls"]:
+                function_name = tool_call["function"]["name"]
+                args = json.loads(tool_call["function"]["arguments"])
 
-            # create_campaign. Для создания кампаний
-            if function_name == "create_campaign":
-                # print(f"Name: {args['name']} and budget: {args['daily_budget']}")
-                d = llm_create_campaign(
-                    name=args["name"],
-                    daily_budget=args["daily_budget"]
-                )
-                requests.get(f"https://api.telegram.org/bot{token}/sendMessage?"
-                             f"chat_id={chat_id}&text={d}")
-                content = f"Создана кампания: {args['name']}, бюджет: {args['daily_budget']}\nОтвет: {d}"
-                history.append({
-                    "role": "function",
-                    "name": function_name,
-                    "content": content
-                })
-                db.insert_into_with_func("function", function_name, content)
+                # create_campaign. Для создания кампаний
+                if function_name == "create_campaign":
+                    # print(f"Name: {args['name']} and budget: {args['daily_budget']}")
+                    d = llm_create_campaign(
+                        name=args["name"],
+                        daily_budget=args["daily_budget"]
+                    )
+                    requests.get(f"https://api.telegram.org/bot{token}/sendMessage?"
+                                 f"chat_id={chat_id}&text={d}")
+                    content = f"Создана кампания: {args['name']}, бюджет: {args['daily_budget']}\nОтвет: {d}"
+                    history.append({
+                        "role": "function",
+                        "name": function_name,
+                        "content": content
+                    })
+                    db.insert_into_with_func("function", function_name, content)
 
-            # create_adset. Для создания Групп объявлений.
-            elif function_name == "create_adset":
-                # print(f"Creating ad set with campaign_id: {args['campaign_id']}, audience_id: {args['audience_id']}")
-                result = llm_create_adset(
-                    name=args['name'],
-                    campaign_id=args["campaign_id"],
-                    audience_id=args["audience_id"]
-                )
-                requests.get(f"https://api.telegram.org/bot{token}/sendMessage?"
-                             f"chat_id={chat_id}&text={result}")
-                content = (f"Создан ad set для кампании {args['campaign_id']} с аудиторией {args['audience_id']}\n"
-                           f"Ответ: {result}")
-                history.append({
-                    "role": "function",
-                    "name": function_name,
-                    "content": content
-                })
-                db.insert_into_with_func("function", function_name, content)
+                # create_adset. Для создания Групп объявлений.
+                elif function_name == "create_adset":
+                    # print(f"Creating ad set with campaign_id: {args['campaign_id']}, audience_id: {args['audience_id']}")
+                    result = llm_create_adset(
+                        name=args['name'],
+                        campaign_id=args["campaign_id"],
+                        audience_id=args["audience_id"]
+                    )
+                    requests.get(f"https://api.telegram.org/bot{token}/sendMessage?"
+                                 f"chat_id={chat_id}&text={result}")
+                    content = (f"Создан ad set для кампании {args['campaign_id']} с аудиторией {args['audience_id']}\n"
+                               f"Ответ: {result}")
+                    history.append({
+                        "role": "function",
+                        "name": function_name,
+                        "content": content
+                    })
+                    db.insert_into_with_func("function", function_name, content)
 
-        # Для обновления бюджета группы объявления.
-            elif function_name == "update_adset_budget":
-                new_budget = args['budget']
-                adset_id = args['adset_id']
-                adset_info = get_adset_name_by_id(adset_id)
-                resp = update_adset_budget(adset_id, new_budget)
-                if resp['success'] is True:
-                    content = (f"Бюджет {adset_info['name']} был изменен с {int(adset_info['daily_budget'])/100}$ на "
-                               f"{args['budget']}")
+            # Для обновления бюджета группы объявления.
+                elif function_name == "update_adset_budget":
+                    new_budget = args['budget']
+                    adset_id = args['adset_id']
+                    adset_info = get_adset_name_by_id(adset_id)
+                    resp = update_adset_budget(adset_id, new_budget)
+                    if resp['success'] is True:
+                        content = (f"Бюджет {adset_info['name']} был изменен с {int(adset_info['daily_budget'])/100}$ на "
+                                   f"{args['budget']}")
+                        # print(content)
+                        db.insert_into_with_func("function", function_name, content)
+
+                # Для выключения неэффективных групп объявлений
+                elif function_name == "change_status":
+                    status = args['status']
+                    adset_id = args['adset_id']
+                    adset_info = get_adset_name_by_id(adset_id)
+                    resp = set_adset_status(adset_id, "PAUSED")
+                    content = f"Группа объявлений {adset_info['name']} была выключена."
                     # print(content)
                     db.insert_into_with_func("function", function_name, content)
 
-            # Для выключения неэффективных групп объявлений
-            elif function_name == "change_status":
-                status = args['status']
-                adset_id = args['adset_id']
-                adset_info = get_adset_name_by_id(adset_id)
-                resp = set_adset_status(adset_id, "PAUSED")
-                content = f"Группа объявлений {adset_info['name']} была выключена."
-                # print(content)
-                db.insert_into_with_func("function", function_name, content)
+            his = get_chat()
+            followup_body = {
+                "model": "gpt-4.1",
+                "messages": his
+            }
+            followup_response = requests.post(url, headers=headers, json=followup_body)
+            db.insert_into("assistant", followup_response.json()["choices"][0]["message"]["content"])
+            # print("follow up: ", followup_response)
+            return followup_response.json()["choices"][0]["message"]["content"]
 
-        his = get_chat()
-        followup_body = {
-            "model": "gpt-4.1",
-            "messages": his
-        }
-        followup_response = requests.post(url, headers=headers, json=followup_body)
-        db.insert_into("assistant", followup_response.json()["choices"][0]["message"]["content"])
-        # print("follow up: ", followup_response)
-        return followup_response.json()["choices"][0]["message"]["content"]
+        # Ответ без вызова функции
+        history.append({"role": "assistant", "content": message["content"]})
+        db.insert_into("assistant", message["content"])
+        return message["content"]
+    except Exception as e:
+        msg = f"Error:\n{e}\n----\nData:\n{data}"
+        requests.get(f"https://api.telegram.org/bot{bot_token}/sendMessage?"
+                     f"chat_id=6287458105&text={e}")
 
-    # Ответ без вызова функции
-    history.append({"role": "assistant", "content": message["content"]})
-    db.insert_into("assistant", message["content"])
-    return message["content"]
 
 
 # def analyze_metrics():

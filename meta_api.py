@@ -201,7 +201,7 @@ def get_metrics_from_meta(adset_id):
         f"&fields=campaign_id,adset_id,campaign_name,adset_name,ad_id,ad_name,date_start,date_stop,"
         f"spend,impressions,clicks,ctr,cpm,actions"
         f"&access_token={access_token}&"
-        f"time_range[since]=2025-08-28&time_range[until]=2025-09-02&time_increment=1"
+        f"time_range[since]=2025-09-06&time_range[until]=2025-09-12&time_increment=1"
         f"&filtering={json.dumps(body)}"
         # f"&filtering=[{{\"field\":\"adset.id\",\"operator\":\"EQUAL\",\"value\":\"{adset_id}\"}}]"
     )
@@ -261,7 +261,7 @@ def get_metrics_from_meta(adset_id):
         db.insert_new_ad_metrics(params=params)
 
 
-# get_metrics_from_meta(120223315253960753)
+get_metrics_from_meta(120222881867800753)
 
 
 def get_metrics_for_day():
